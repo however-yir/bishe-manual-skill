@@ -9,11 +9,18 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/however-yir/bishe-manual-skill/actions/workflows/skill-smoke.yml"><img src="https://github.com/however-yir/bishe-manual-skill/actions/workflows/skill-smoke.yml/badge.svg" alt="Skill Smoke" /></a>
   <img src="https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/Codex-Skill-111111" alt="Codex Skill" />
   <img src="https://img.shields.io/badge/Output-DOCX-0A7EFA" alt="DOCX" />
   <img src="https://img.shields.io/badge/Workflow-Template%20First-16A34A" alt="Template First" />
 </p>
+
+> Status: `active`
+>
+> Role: documentation tooling repo for graduation design delivery, template-first writing, and docx-ready handoff
+>
+> Next priority: example I/O, evaluation samples, and version history
 
 ---
 
