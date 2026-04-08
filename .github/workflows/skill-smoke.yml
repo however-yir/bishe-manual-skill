@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  python-smoke:
+  python-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,12 +23,13 @@ jobs:
           cache: pip
 
       - name: Install Python dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt pytest
 
-      - name: Compile Python tools
-        run: python -m compileall tools
+      - name: Run Python tests
+        run: pytest tests -q
 
-  node-smoke:
+  node-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -44,5 +45,5 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Syntax check browser helper
-        run: node --check tools/browser/capture_screenshots.mjs
+      - name: Run browser helper tests
+        run: node --test tests/browser/*.test.mjs

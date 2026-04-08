@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
-function resolveUrl(baseUrl, entryUrl) {
+export function resolveUrl(baseUrl, entryUrl) {
   if (!entryUrl) {
     return baseUrl;
   }
@@ -15,12 +16,12 @@ function resolveUrl(baseUrl, entryUrl) {
   return new URL(entryUrl, baseUrl).toString();
 }
 
-function slugify(label) {
+export function slugify(label) {
   const normalized = label.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-").trim();
   return normalized || "screenshot";
 }
 
-async function waitForEntry(page, entry) {
+export async function waitForEntry(page, entry) {
   if (entry.wait_for_timeout_ms) {
     await page.waitForTimeout(entry.wait_for_timeout_ms);
   }
@@ -32,7 +33,7 @@ async function waitForEntry(page, entry) {
   }
 }
 
-async function applyActions(page, entry) {
+export async function applyActions(page, entry) {
   for (const action of entry.actions ?? []) {
     switch (action.type) {
       case "click":
@@ -59,15 +60,7 @@ async function applyActions(page, entry) {
   }
 }
 
-async function main() {
-  const planPath = process.argv[2];
-  if (!planPath) {
-    console.error("Usage: node tools/browser/capture_screenshots.mjs <plan.json>");
-    process.exit(1);
-  }
-
-  const absolutePlanPath = path.resolve(planPath);
-  const plan = JSON.parse(fs.readFileSync(absolutePlanPath, "utf8"));
+export async function runPlan(plan, absolutePlanPath) {
   const outputDir = path.resolve(path.dirname(absolutePlanPath), plan.output_dir ?? "output/doc");
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -79,10 +72,10 @@ async function main() {
     ? browser.contexts()[0]
     : await browser.newContext({
         viewport: plan.viewport ?? { width: 1440, height: 900 },
-        ignoreHTTPSErrors: true
+        ignoreHTTPSErrors: true,
       });
 
-  const page = context.pages()[0] ?? await context.newPage();
+  const page = context.pages()[0] ?? (await context.newPage());
   const imageMap = {};
 
   try {
@@ -109,6 +102,7 @@ async function main() {
     const imageMapPath = path.resolve(path.dirname(absolutePlanPath), plan.image_map_output ?? "image-map.json");
     fs.writeFileSync(imageMapPath, JSON.stringify(imageMap, null, 2), "utf8");
     console.log(`IMAGE_MAP\t${imageMapPath}`);
+
     if (plan.cdp_url) {
       await browser.close();
     } else {
@@ -118,7 +112,33 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error.stack || String(error));
-  process.exit(1);
-});
+export async function main(argv = process.argv.slice(2)) {
+  const planPath = argv[0];
+  if (!planPath) {
+    console.error("Usage: node tools/browser/capture_screenshots.mjs <plan.json>");
+    return 1;
+  }
+
+  const absolutePlanPath = path.resolve(planPath);
+  const plan = JSON.parse(fs.readFileSync(absolutePlanPath, "utf8"));
+  await runPlan(plan, absolutePlanPath);
+  return 0;
+}
+
+function isDirectRun() {
+  if (!process.argv[1]) {
+    return false;
+  }
+  return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+}
+
+if (isDirectRun()) {
+  main()
+    .then((code) => {
+      process.exit(code);
+    })
+    .catch((error) => {
+      console.error(error.stack || String(error));
+      process.exit(1);
+    });
+}
