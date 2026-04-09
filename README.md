@@ -273,6 +273,16 @@ python tools/generate_thesis_docx.py manual.md manual.docx \
   --image-map image-map.json
 ```
 
+### 9.7 运行测试与回归
+
+```bash
+pip install -r requirements.txt pytest
+pytest tests -q
+
+npm ci
+node --test tests/browser/*.test.mjs
+```
+
 ---
 
 ## 10. 质量检查清单

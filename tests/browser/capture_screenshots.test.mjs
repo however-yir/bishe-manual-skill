@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   applyActions,
+  main,
   resolveUrl,
   slugify,
   waitForEntry,
@@ -114,4 +115,9 @@ test("waitForEntry applies timeout/text/selector waits", async () => {
     ["waitForText", "加载完成", "visible", 3210],
     ["waitForSelector", "#ready", "visible", 3210],
   ]);
+});
+
+test("main returns 1 when plan path is missing", async () => {
+  const exitCode = await main([]);
+  assert.equal(exitCode, 1);
 });
