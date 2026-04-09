@@ -276,7 +276,7 @@ python tools/generate_thesis_docx.py manual.md manual.docx \
 ### 9.7 运行测试与回归
 
 ```bash
-pip install -r requirements.txt pytest
+pip install -r requirements.txt
 pytest tests -q
 
 npm ci
