@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 PLACEHOLDER_RE = re.compile(r"^\[此处插入截图：(.+?)\]$")
+SCHEMA_VERSION = 1
 
 
 def main() -> int:
@@ -27,7 +28,14 @@ def main() -> int:
 
     if len(sys.argv) >= 4 and sys.argv[2] == "--json-out":
         Path(sys.argv[3]).write_text(
-            json.dumps({"labels": labels}, ensure_ascii=False, indent=2),
+            json.dumps(
+                {
+                    "schema_version": SCHEMA_VERSION,
+                    "labels": labels,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
             encoding="utf-8",
         )
     return 0

@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 import {
@@ -6,6 +9,7 @@ import {
   main,
   resolveUrl,
   slugify,
+  validatePlan,
   waitForEntry,
 } from "../../tools/browser/capture_screenshots.mjs";
 
@@ -120,4 +124,50 @@ test("waitForEntry applies timeout/text/selector waits", async () => {
 test("main returns 1 when plan path is missing", async () => {
   const exitCode = await main([]);
   assert.equal(exitCode, 1);
+});
+
+test("main rejects invalid plan schema before browser launch", async () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "capture-plan-"));
+  const planPath = path.join(tmpDir, "invalid-plan.json");
+  fs.writeFileSync(planPath, JSON.stringify({ base_url: "http://127.0.0.1:3000" }), "utf8");
+
+  await assert.rejects(
+    () => main([planPath]),
+    /entries/,
+  );
+});
+
+test("validatePlan rejects missing entries field", () => {
+  assert.throws(
+    () => validatePlan({ base_url: "http://127.0.0.1:3000" }),
+    /entries/,
+  );
+});
+
+test("validatePlan rejects duplicate filenames", () => {
+  assert.throws(
+    () =>
+      validatePlan({
+        entries: [
+          { label: "A", filename: "same.png", actions: [] },
+          { label: "B", filename: "same.png", actions: [] },
+        ],
+      }),
+    /Duplicate entry filename/,
+  );
+});
+
+test("waitForEntry propagates selector wait errors", async () => {
+  const page = createMockPage();
+  page.waitForSelector = async () => {
+    throw new Error("selector timeout");
+  };
+
+  await assert.rejects(
+    () =>
+      waitForEntry(page, {
+        wait_for_selector: "#missing",
+      }),
+    /selector timeout/,
+  );
 });

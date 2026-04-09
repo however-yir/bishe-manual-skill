@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from build_reference_pool import classify_language, extract_year, parse_references
+from build_screenshot_plan import SCHEMA_VERSION, build_entries
 from build_screenshot_plan import main as build_screenshot_plan_main
 from build_screenshot_plan import safe_filename
 from ensure_thesis_assets import (
@@ -22,6 +23,19 @@ from markdown_utils import compute_text_metrics, markdown_to_visible_text
 def test_safe_filename_replaces_illegal_chars_and_handles_empty() -> None:
     assert safe_filename("系统/首页:截图?") == "系统-首页-截图-"
     assert safe_filename("   ") == "screenshot"
+
+
+def test_build_entries_assigns_stable_filenames_for_duplicate_labels() -> None:
+    entries = build_entries(["系统首页", "系统首页", "系统首页"])
+
+    assert entries[0]["filename"] == "系统首页.png"
+    assert entries[1]["filename"] == "系统首页-2.png"
+    assert entries[2]["filename"] == "系统首页-3.png"
+
+
+def test_schema_version_is_positive_integer() -> None:
+    assert isinstance(SCHEMA_VERSION, int)
+    assert SCHEMA_VERSION >= 1
 
 
 def test_next_number_handles_decimal_integer_and_empty_cases() -> None:

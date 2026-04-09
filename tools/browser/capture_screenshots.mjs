@@ -21,6 +21,49 @@ export function slugify(label) {
   return normalized || "screenshot";
 }
 
+export function validatePlan(plan) {
+  if (!plan || typeof plan !== "object" || Array.isArray(plan)) {
+    throw new Error("Plan must be a JSON object.");
+  }
+
+  if (!Array.isArray(plan.entries)) {
+    throw new Error("Plan field `entries` must be an array.");
+  }
+
+  if (plan.schema_version !== undefined) {
+    if (!Number.isInteger(plan.schema_version) || plan.schema_version < 1) {
+      throw new Error("Plan field `schema_version` must be a positive integer.");
+    }
+  }
+
+  const seenFilenames = new Set();
+  for (const [index, entry] of plan.entries.entries()) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      throw new Error(`Plan entry at index ${index} must be an object.`);
+    }
+    if (typeof entry.label !== "string" || entry.label.trim() === "") {
+      throw new Error(`Plan entry at index ${index} requires non-empty string field \`label\`.`);
+    }
+    if (entry.url !== undefined && typeof entry.url !== "string") {
+      throw new Error(`Plan entry at index ${index} field \`url\` must be a string.`);
+    }
+    if (entry.filename !== undefined) {
+      if (typeof entry.filename !== "string" || entry.filename.trim() === "") {
+        throw new Error(`Plan entry at index ${index} field \`filename\` must be a non-empty string.`);
+      }
+      if (seenFilenames.has(entry.filename)) {
+        throw new Error(`Duplicate entry filename detected: ${entry.filename}`);
+      }
+      seenFilenames.add(entry.filename);
+    }
+    if (entry.actions !== undefined && !Array.isArray(entry.actions)) {
+      throw new Error(`Plan entry at index ${index} field \`actions\` must be an array.`);
+    }
+  }
+
+  return plan;
+}
+
 export async function waitForEntry(page, entry) {
   if (entry.wait_for_timeout_ms) {
     await page.waitForTimeout(entry.wait_for_timeout_ms);
@@ -61,6 +104,7 @@ export async function applyActions(page, entry) {
 }
 
 export async function runPlan(plan, absolutePlanPath) {
+  validatePlan(plan);
   const outputDir = path.resolve(path.dirname(absolutePlanPath), plan.output_dir ?? "output/doc");
   fs.mkdirSync(outputDir, { recursive: true });
 
@@ -120,7 +164,7 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const absolutePlanPath = path.resolve(planPath);
-  const plan = JSON.parse(fs.readFileSync(absolutePlanPath, "utf8"));
+  const plan = validatePlan(JSON.parse(fs.readFileSync(absolutePlanPath, "utf8")));
   await runPlan(plan, absolutePlanPath);
   return 0;
 }
